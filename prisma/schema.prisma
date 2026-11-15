@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  nameAr        String
+  nameEn        String
+  descriptionAr String?
+  image         String?
+  sortOrder     Int       @default(0)
+  products      Product[]
+  createdAt     DateTime  @default(now())
+}
+
+model Product {
+  id             String      @id @default(cuid())
+  slug           String      @unique
+  nameAr         String
+  nameEn         String
+  descriptionAr  String
+  descriptionEn  String
+  price          Int
+  compareAtPrice Int?
+  categoryId     String
+  category       Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  sizes          Json        // string[] e.g. ["S", "M", "L", "XL"]
+  colors         Json        // { nameAr: string, nameEn: string, hex: string, image?: string }[]
+  images         Json        // string[]
+  badgeAr        String?
+  collectionName String?     // e.g. "شتاء 2026"
+  inStock        Boolean     @default(true)
+  featured       Boolean     @default(false)
+  orderItems     OrderItem[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  orderNumber      String      @unique
+  customerName     String
+  customerPhone    String
+  governorate      String
+  address          String
+  notes            String?
+  paymentMethod    String      // COD | INSTAPAY | VODAFONE_CASH
+  paymentReference String?
+  subtotal         Int
+  shippingCost     Int
+  total            Int
+  status           String      @default("PENDING") // PENDING | CONFIRMED | SHIPPED | DELIVERED | CANCELLED
+  items            OrderItem[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  nameAr    String
+  price     Int
+  quantity  Int
+  size      String
+  color     String
+  image     String
+}
+
+model StoreSettings {
+  id                 String   @id @default("default")
+  instapayHandle     String   @default("herera@instapay")
+  vodafoneCashNumber String   @default("01000000000")
+  whatsappNumber     String   @default("201000000000")
+  shippingCairo      Int      @default(60)
+  shippingOther      Int      @default(85)
+  announcementAr     String   @default("شحن لجميع محافظات مصر • الدفع عند الاستلام أو إنستاباي أو فودافون كاش")
+  announcementEn     String   @default("Shipping across all Egypt • COD, InstaPay & Vodafone Cash")
+  updatedAt          DateTime @updatedAt
+}
