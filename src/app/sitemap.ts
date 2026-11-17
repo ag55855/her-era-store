@@ -5,12 +5,20 @@ const BASE_URL =
   "https://her-era-store-production.up.railway.app";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const products = await prisma.product.findMany({
-    select: {
-      slug: true,
-      updatedAt: true,
-    },
-  });
+  const [products, categories] = await Promise.all([
+    prisma.product.findMany({
+      select: {
+        slug: true,
+        updatedAt: true,
+      },
+    }),
+    prisma.category.findMany({
+      select: {
+        slug: true,
+        createdAt: true,
+      },
+    }),
+  ]);
 
   return [
     {
@@ -19,7 +27,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 1,
     },
-
     ...products.map((product) => ({
       url: ${BASE_URL}/products/${product.slug},
       lastModified: product.updatedAt,
