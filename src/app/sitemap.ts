@@ -1,12 +1,30 @@
-import type { MetadataRoute } from 'next'
+import type { MetadataRoute } from "next";
+import { prisma } from "@/lib/prisma";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+const BASE_URL =
+  "https://her-era-store-production.up.railway.app";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const products = await prisma.product.findMany({
+    select: {
+      slug: true,
+      updatedAt: true,
+    },
+  });
+
   return [
     {
-      url: 'https://her-era-store-production.up.railway.app/',
+      url: BASE_URL,
       lastModified: new Date(),
-      changeFrequency: 'daily',
+      changeFrequency: "daily",
       priority: 1,
     },
-  ]
+
+    ...products.map((product) => ({
+      url: ${BASE_URL}/products/${product.slug},
+      lastModified: product.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    })),
+  ];
 }
