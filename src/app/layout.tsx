@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   title: "HER ERA | Wear Your Era — أزياء حريمي عصرية",
   description:
     "تسوقي أحدث تشكيلة من الفساتين والأطقم الكاجوال والجواكت والتريكو من HER ERA مع شحن لجميع محافظات مصر.",
+  verification: {
+  google: "K1N-InAGl9eHNUp9GFhY8QH-Oc_kMuZU79B3-Oeivyo",
+},
 };
 
 export default function RootLayout({
