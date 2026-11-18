@@ -103,23 +103,23 @@ export function StorefrontClient({
             </div>
           </div>
 
-          {/* Hero Visual Collage */}
+          {/* Hero Visual Collage (Updated with Cloudinary Links) */}
           <div className="lg:col-span-6 grid grid-cols-2 gap-4 max-w-xl mx-auto w-full">
             <div className="space-y-4 pt-6">
-              <div className="rounded-3xl overflow-hidden shadow-lg border-4 border-white aspect-[3/4]">
+              <div className="rounded-3xl overflow-hidden shadow-lg border-4 border-white aspect-[3/4] group">
                 <img
-                  src="/images/products/rose-la-pink-set.jpg"
-                  alt="HER ERA Set"
-                  className="w-full h-full object-cover"
+                  src="https://res.cloudinary.com/me1qwpbw/image/upload/v1795017690/photo_6043872078106137798_y.jpg"
+                  alt="HER ERA Set 1"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
             </div>
             <div className="space-y-4">
-              <div className="rounded-3xl overflow-hidden shadow-lg border-4 border-white aspect-[3/4]">
+              <div className="rounded-3xl overflow-hidden shadow-lg border-4 border-white aspect-[3/4] group">
                 <img
-                  src="/images/products/sunflower-dress-brown.jpg"
-                  alt="HER ERA Dress"
-                  className="w-full h-full object-cover"
+                  src="https://res.cloudinary.com/me1qwpbw/image/upload/v1795017697/photo_5927081837039652788_y.jpg"
+                  alt="HER ERA Set 2"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
             </div>
@@ -237,37 +237,3 @@ export function StorefrontClient({
                     ? "bg-brand-rose text-white"
                     : "bg-brand-blush text-brand-ink hover:bg-brand-soft"
                 }`}
-              >
-                {lang === "ar" ? cat.nameAr : cat.nameEn}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Product Grid */}
-        {filteredProducts.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-brand-border">
-            <p className="text-lg font-bold text-brand-ink mb-2">
-              {lang === "ar" ? "لم يتم العثور على منتجات مطابقة" : "No matching products found"}
-            </p>
-            <button
-              onClick={() => {
-                setSelectedCategory("all");
-                setSearchQuery("");
-              }}
-              className="mt-2 px-6 py-2.5 rounded-full bg-brand-rose text-white text-sm font-bold"
-            >
-              {lang === "ar" ? "عرض كل المنتجات" : "Show All Products"}
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
