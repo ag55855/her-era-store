@@ -39,7 +39,7 @@ async function main() {
     },
     {
       slug: "sets",
-      nameAr: "أطقم ",
+      nameAr: "أطقم كاجوال",
       nameEn: "Casual Sets",
       descriptionAr: "أطقم سوت قطعتين و3 قطع بخامات ميلتون وتريكو وجينز",
       image: "/images/products/rose-la-pink-set.jpg",
