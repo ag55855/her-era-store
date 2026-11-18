@@ -237,3 +237,37 @@ export function StorefrontClient({
                     ? "bg-brand-rose text-white"
                     : "bg-brand-blush text-brand-ink hover:bg-brand-soft"
                 }`}
+              >
+                {lang === "ar" ? cat.nameAr : cat.nameEn}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Product Grid */}
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl border border-brand-border">
+            <p className="text-lg font-bold text-brand-ink mb-2">
+              {lang === "ar" ? "لم يتم العثور على منتجات مطابقة" : "No matching products found"}
+            </p>
+            <button
+              onClick={() => {
+                setSelectedCategory("all");
+                setSearchQuery("");
+              }}
+              className="mt-2 px-6 py-2.5 rounded-full bg-brand-rose text-white text-sm font-bold"
+            >
+              {lang === "ar" ? "عرض كل المنتجات" : "Show All Products"}
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
