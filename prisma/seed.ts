@@ -34,7 +34,7 @@ async function main() {
       nameAr: "سوت",
       nameEn: "Suits",
       descriptionAr: "فساتين وسوت شتوية وتريكو وكوردروي بتصميمات عصرية ومحتشمة",
-      image: "/images/products/sunflower-dress-brown.jpg",
+      image: "https://res.cloudinary.com/me1qwpbw/image/upload/v1795028857/a748aed6-3b30-4475-8028-8fabcaf96633.png",
       sortOrder: 1,
     },
     {
