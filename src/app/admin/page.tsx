@@ -11,7 +11,6 @@ import {
   Upload,
   Lock,
   Check,
-  FolderTree,
 } from "lucide-react";
 import type { CategoryDTO, ProductDTO, StoreSettingsDTO } from "@/lib/types";
 
@@ -42,7 +41,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
 
-  const [tab, setTab] = useState<"products" | "categories" | "orders" | "settings">("products");
+  const [tab, setTab] = useState<"products" | "orders" | "settings">("products");
   const [products, setProducts] = useState<ProductDTO[]>([]);
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -64,16 +63,6 @@ export default function AdminPage() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
-
-  // Add Category State
-  const [showCatModal, setShowCatModal] = useState(false);
-  const [catNameAr, setCatNameAr] = useState("");
-  const [catNameEn, setCatNameEn] = useState("");
-  const [catSlug, setCatSlug] = useState("");
-  const [catImage, setCatImage] = useState("");
-  const [uploadingCatImg, setUploadingCatImg] = useState(false);
-  const [savingCat, setSavingCat] = useState(false);
-
   const [savedToast, setSavedToast] = useState("");
 
   const checkAuth = async () => {
@@ -152,23 +141,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleCatImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingCatImg(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (data.url) {
-        setCatImage(data.url);
-      }
-    } finally {
-      setUploadingCatImg(false);
-    }
-  };
-
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!uploadedImages.length) return;
@@ -218,41 +190,6 @@ export default function AdminPage() {
     } finally {
       setSavingProduct(false);
     }
-  };
-
-  const handleCreateCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSavingCat(true);
-    try {
-      const res = await fetch("/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nameAr: catNameAr,
-          nameEn: catNameEn || catNameAr,
-          slug: catSlug || catNameEn.toLowerCase().replace(/\s+/g, "-"),
-          image: catImage || null,
-        }),
-      });
-      if (res.ok) {
-        setShowCatModal(false);
-        setCatNameAr("");
-        setCatNameEn("");
-        setCatSlug("");
-        setCatImage("");
-        await loadAllData();
-        setSavedToast("تمت إضافة القسم الجديد بنجاح!");
-        setTimeout(() => setSavedToast(""), 3000);
-      }
-    } finally {
-      setSavingCat(false);
-    }
-  };
-
-  const handleDeleteCategory = async (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذا القسم؟ سيتم حذف المنتجات التابعة له.")) return;
-    await fetch(`/api/categories/${id}`, { method: "DELETE" });
-    loadAllData();
   };
 
   const handleToggleStock = async (p: ProductDTO) => {
@@ -311,7 +248,7 @@ export default function AdminPage() {
             لوحة تحكم HER ERA
           </h1>
           <p className="text-xs text-brand-muted">
-            أدخلي كلمة مرور الإدارة لإدارة الأقسام والمنتجات ومتابعة الطلبات
+            أدخلي كلمة مرور الإدارة لإضافة دفعات ملابس جديدة ومتابعة الطلبات
           </p>
           <input
             type="password"
@@ -344,25 +281,17 @@ export default function AdminPage() {
             إدارة متجر HER ERA
           </h1>
           <p className="text-xs sm:text-sm text-brand-muted mt-1">
-            تحكم كامل في الأقسام، الصور، المنتجات، والطلبات بكل سهولة
+            أضيفي منتجات أو دفعات جديدة في ثواني، وتابعي الطلبات وأرقام الدفع
           </p>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={() => setShowCatModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand-cream border border-brand-border text-xs sm:text-sm font-bold text-brand-ink hover:bg-brand-blush transition-colors"
-          >
-            <FolderTree className="w-4 h-4 text-brand-rose" />
-            <span>إضافة قسم جديد</span>
-          </button>
-
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setShowAddModal(true)}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-rose text-white text-sm font-bold shadow-sm hover:bg-brand-deep transition-colors"
           >
             <Plus className="w-4 h-4" />
-            <span>إضافة منتج جديد</span>
+            <span>إضافة منتج / دفعة جديدة</span>
           </button>
 
           <button
@@ -383,10 +312,10 @@ export default function AdminPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-brand-border pb-3 overflow-x-auto">
+      <div className="flex gap-2 border-b border-brand-border pb-3">
         <button
           onClick={() => setTab("products")}
-          className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shrink-0 ${
+          className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold ${
             tab === "products"
               ? "bg-brand-ink text-white"
               : "bg-white border border-brand-border text-brand-ink"
@@ -397,20 +326,8 @@ export default function AdminPage() {
         </button>
 
         <button
-          onClick={() => setTab("categories")}
-          className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shrink-0 ${
-            tab === "categories"
-              ? "bg-brand-ink text-white"
-              : "bg-white border border-brand-border text-brand-ink"
-          }`}
-        >
-          <FolderTree className="w-4 h-4" />
-          <span>الأقسام ({categories.length})</span>
-        </button>
-
-        <button
           onClick={() => setTab("orders")}
-          className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shrink-0 ${
+          className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold ${
             tab === "orders"
               ? "bg-brand-ink text-white"
               : "bg-white border border-brand-border text-brand-ink"
@@ -422,7 +339,7 @@ export default function AdminPage() {
 
         <button
           onClick={() => setTab("settings")}
-          className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shrink-0 ${
+          className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold ${
             tab === "settings"
               ? "bg-brand-ink text-white"
               : "bg-white border border-brand-border text-brand-ink"
@@ -481,38 +398,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Tab 2: Categories Management */}
-      {tab === "categories" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categories.map((c) => (
-            <div
-              key={c.id}
-              className="bg-white rounded-2xl border border-brand-border p-5 flex items-center justify-between shadow-xs gap-4"
-            >
-              <div className="flex items-center gap-3">
-                <img
-                  src={c.image || "/images/logo.jpg"}
-                  alt=""
-                  className="w-14 h-14 rounded-xl object-cover bg-brand-blush shrink-0 border border-brand-border"
-                />
-                <div>
-                  <h3 className="text-base font-extrabold text-brand-ink">{c.nameAr}</h3>
-                  <p className="text-xs text-brand-muted mt-0.5">الرابط: {c.slug}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => handleDeleteCategory(c.id)}
-                className="p-2 text-brand-muted hover:text-red-600 bg-brand-blush/40 rounded-xl shrink-0"
-                title="حذف القسم"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Tab 3: Orders */}
+      {/* Tab 2: Orders */}
       {tab === "orders" && (
         <div className="space-y-4">
           {orders.length === 0 ? (
@@ -574,7 +460,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Tab 4: Settings */}
+      {/* Tab 3: Settings */}
       {tab === "settings" && settings && (
         <form
           onSubmit={handleSaveSettings}
@@ -635,96 +521,12 @@ export default function AdminPage() {
         </form>
       )}
 
-      {/* Add Category Modal */}
-      {showCatModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
-          <form
-            onSubmit={handleCreateCategory}
-            className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl my-8"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-extrabold text-brand-ink">إضافة قسم جديد مع صورته</h2>
-              <button
-                type="button"
-                onClick={() => setShowCatModal(false)}
-                className="text-sm font-bold text-brand-muted"
-              >
-                إغلاق ✕
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold mb-1">اسم القسم (عربي) *</label>
-                <input
-                  required
-                  value={catNameAr}
-                  onChange={(e) => setCatNameAr(e.target.value)}
-                  placeholder="مثال: عبايات"
-                  className="w-full px-3 py-2.5 rounded-xl border border-brand-border text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1">اسم القسم (إنجليزي)</label>
-                <input
-                  value={catNameEn}
-                  onChange={(e) => setCatNameEn(e.target.value)}
-                  placeholder="Abayas"
-                  className="w-full px-3 py-2.5 rounded-xl border border-brand-border text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold mb-1">معرف الرابط (Slug بالإنجليزية)</label>
-                <input
-                  value={catSlug}
-                  onChange={(e) => setCatSlug(e.target.value)}
-                  placeholder="abayas"
-                  className="w-full px-3 py-2.5 rounded-xl border border-brand-border text-sm"
-                  dir="ltr"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold mb-1">صورة عرض الفئة (الكارد)</label>
-                <label className="flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-dashed border-brand-pink bg-brand-blush/40 cursor-pointer hover:bg-brand-blush">
-                  <Upload className="w-5 h-5 text-brand-rose mb-1" />
-                  <span className="text-xs font-bold text-brand-ink">
-                    {uploadingCatImg ? "جاري رفع الصورة..." : "اضغطي لاختيار صورة القسم"}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleCatImageUpload}
-                    className="hidden"
-                  />
-                </label>
-
-                {catImage && (
-                  <div className="mt-2 flex items-center gap-3">
-                    <img src={catImage} alt="" className="w-14 h-16 rounded-xl object-cover border border-brand-border" />
-                    <span className="text-xs font-bold text-emerald-700">تم رفع صورة القسم بنجاح!</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={savingCat}
-              className="w-full py-3 rounded-full bg-brand-rose text-white font-bold text-sm hover:bg-brand-deep disabled:opacity-50"
-            >
-              {savingCat ? "جاري الحفظ..." : "حفظ وإنشاء القسم"}
-            </button>
-          </form>
-        </div>
-      )}
-
       {/* Add Product Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
           <form
             onSubmit={handleCreateProduct}
-            className="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 my-8 max-h-[90vh] overflow-y-auto shadow-xl"
+            className="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 my-8 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-extrabold text-brand-ink">
@@ -823,7 +625,7 @@ export default function AdminPage() {
                     type="color"
                     value={colorHex}
                     onChange={(e) => setColorHex(e.target.value)}
-                    className="w-10 h-10 rounded-lg border border-brand-border cursor-pointer"
+                    className="w-10 h-10 rounded-lg border border-brand-border"
                   />
                 </div>
               </div>
