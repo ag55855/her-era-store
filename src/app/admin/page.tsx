@@ -11,7 +11,6 @@ import {
   Upload,
   Lock,
   Check,
-  Palette,
 } from "lucide-react";
 import type { CategoryDTO, ProductDTO, StoreSettingsDTO } from "@/lib/types";
 
@@ -37,13 +36,6 @@ interface AdminOrder {
   }[];
 }
 
-interface ProductColorInput {
-  nameAr: string;
-  nameEn: string;
-  hex: string;
-  image: string;
-}
-
 export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [password, setPassword] = useState("");
@@ -65,13 +57,10 @@ export default function AdminPage() {
   const [categoryId, setCategoryId] = useState("");
   const [collectionName, setCollectionName] = useState("دفعة شتاء 2026");
   const [badgeAr, setBadgeAr] = useState("وصل حديثاً");
-  const [sizesText, setSizesText] = useState("One Size");
-  
-  // Multi-color & Multi-image state
-  const [productColors, setProductColors] = useState<ProductColorInput[]>([
-    { nameAr: "نبيتي", nameEn: "Burgundy", hex: "#5B1420", image: "" },
-  ]);
-  const [allImages, setAllImages] = useState<string[]>([]);
+  const [sizesText, setSizesText] = useState("S, M, L, XL");
+  const [colorNameAr, setColorNameAr] = useState("الأساسي");
+  const [colorHex, setColorHex] = useState("#E57399");
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
   const [savedToast, setSavedToast] = useState("");
@@ -138,65 +127,29 @@ export default function AdminPage() {
     if (!files?.length) return;
     setUploading(true);
     try {
-      const newUrls: string[] = [];
       for (const file of Array.from(files)) {
         const fd = new FormData();
         fd.append("file", file);
         const res = await fetch("/api/upload", { method: "POST", body: fd });
         const data = await res.json();
         if (data.url) {
-          newUrls.push(data.url);
+          setUploadedImages((prev) => [...prev, data.url]);
         }
-      }
-      setAllImages((prev) => [...prev, ...newUrls]);
-      // لو دي أول صور تترفع، حطها تلقائيًا لأول لون لو مالهوش صورة
-      if (newUrls.length > 0 && productColors.length > 0 && !productColors[0].image) {
-        const updatedColors = [...productColors];
-        updatedColors[0].image = newUrls[0];
-        setProductColors(updatedColors);
       }
     } finally {
       setUploading(false);
     }
   };
 
-  const handleAddColorRow = () => {
-    setProductColors((prev) => [
-      ...prev,
-      { nameAr: "لون جديد", nameEn: "Color", hex: "#E7D8C3", image: allImages[0] || "" },
-    ]);
-  };
-
-  const handleRemoveColorRow = (index: number) => {
-    setProductColors((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleColorChange = (index: number, field: keyof ProductColorInput, value: string) => {
-    const updated = [...productColors];
-    updated[index] = { ...updated[index], [field]: value };
-    setProductColors(updated);
-  };
-
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!allImages.length) {
-      alert("الرجاء رفع صورة واحدة على الأقل للمنتج!");
-      return;
-    }
+    if (!uploadedImages.length) return;
     setSavingProduct(true);
     try {
       const sizes = sizesText
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
-
-      const formattedColors = productColors.map((c) => ({
-        nameAr: c.nameAr,
-        nameEn: c.nameEn || c.nameAr,
-        hex: c.hex,
-        image: c.image || allImages[0],
-      }));
-
       const res = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -210,12 +163,18 @@ export default function AdminPage() {
           collectionName,
           badgeAr,
           sizes,
-          colors: formattedColors,
-          images: allImages,
+          colors: [
+            {
+              nameAr: colorNameAr || "الأساسي",
+              nameEn: colorNameAr || "Default",
+              hex: colorHex,
+              image: uploadedImages[0],
+            },
+          ],
+          images: uploadedImages,
           featured: true,
         }),
       });
-
       if (res.ok) {
         setShowAddModal(false);
         setNameAr("");
@@ -223,14 +182,10 @@ export default function AdminPage() {
         setDescriptionAr("");
         setPrice("");
         setCompareAtPrice("");
-        setAllImages([]);
-        setProductColors([{ nameAr: "نبيتي", nameEn: "Burgundy", hex: "#5B1420", image: "" }]);
+        setUploadedImages([]);
         await loadAllData();
-        setSavedToast("تمت إضافة المنتج بجميع ألوانه بنجاح!");
+        setSavedToast("تمت إضافة المنتج الجديد بنجاح!");
         setTimeout(() => setSavedToast(""), 3000);
-      } else {
-        const errData = await res.json();
-        alert(errdata?.error || "حدث خطأ أثناء حفظ المنتج");
       }
     } finally {
       setSavingProduct(false);
@@ -300,7 +255,7 @@ export default function AdminPage() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="كلمة المرور الافتراضية"
+            placeholder="كلمة المرور (الافتراضية: HerEra2026!)"
             className="w-full px-4 py-3 rounded-xl border border-brand-border bg-brand-cream text-sm text-center focus:outline-none focus:border-brand-rose"
           />
           {loginError && (
@@ -326,7 +281,7 @@ export default function AdminPage() {
             إدارة متجر HER ERA
           </h1>
           <p className="text-xs sm:text-sm text-brand-muted mt-1">
-            أضيفي منتجات متعددة الألوان والمقاسات، وتابعي الطلبات بسهولة تامة
+            أضيفي منتجات أو دفعات جديدة في ثواني، وتابعي الطلبات وأرقام الدفع
           </p>
         </div>
 
@@ -336,7 +291,7 @@ export default function AdminPage() {
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-rose text-white text-sm font-bold shadow-sm hover:bg-brand-deep transition-colors"
           >
             <Plus className="w-4 h-4" />
-            <span>إضافة منتج أو دفعة جديدة</span>
+            <span>إضافة منتج / دفعة جديدة</span>
           </button>
 
           <button
@@ -566,16 +521,16 @@ export default function AdminPage() {
         </form>
       )}
 
-      {/* Add Product Modal (Advanced & Multi-Color) */}
+      {/* Add Product Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
           <form
             onSubmit={handleCreateProduct}
-            className="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-5 my-8 max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 my-8 max-h-[90vh] overflow-y-auto"
           >
-            <div className="flex items-center justify-between border-b border-brand-border pb-3">
+            <div className="flex items-center justify-between">
               <h2 className="text-lg font-extrabold text-brand-ink">
-                إضافة منتج أو دفعة جديدة (مع ألوان متعددة)
+                إضافة منتج أو دفعة جديدة
               </h2>
               <button
                 type="button"
@@ -593,7 +548,7 @@ export default function AdminPage() {
                   required
                   value={nameAr}
                   onChange={(e) => setNameAr(e.target.value)}
-                  placeholder="مثال: توب تريكو هاف كول"
+                  placeholder="مثال: دريس تريكو شتوي"
                   className="w-full px-3 py-2 rounded-xl border border-brand-border text-sm"
                 />
               </div>
@@ -602,7 +557,7 @@ export default function AdminPage() {
                 <input
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
-                  placeholder="Ribbed Mock-Neck Knit Top"
+                  placeholder="Winter Knit Dress"
                   className="w-full px-3 py-2 rounded-xl border border-brand-border text-sm"
                 />
               </div>
@@ -613,7 +568,7 @@ export default function AdminPage() {
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="350"
+                  placeholder="950"
                   className="w-full px-3 py-2 rounded-xl border border-brand-border text-sm"
                 />
               </div>
@@ -623,7 +578,7 @@ export default function AdminPage() {
                   type="number"
                   value={compareAtPrice}
                   onChange={(e) => setCompareAtPrice(e.target.value)}
-                  placeholder="450"
+                  placeholder="1150"
                   className="w-full px-3 py-2 rounded-xl border border-brand-border text-sm"
                 />
               </div>
@@ -632,7 +587,7 @@ export default function AdminPage() {
                 <select
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-brand-border text-sm bg-white"
+                  className="w-full px-3 py-2 rounded-xl border border-brand-border text-sm"
                 >
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -655,41 +610,43 @@ export default function AdminPage() {
                 <input
                   value={sizesText}
                   onChange={(e) => setSizesText(e.target.value)}
-                  placeholder="One Size, S, M, L"
                   className="w-full px-3 py-2 rounded-xl border border-brand-border text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold mb-1">شارة مميزة (Badge)</label>
-                <input
-                  value={badgeAr}
-                  onChange={(e) => setBadgeAr(e.target.value)}
-                  placeholder="وصل حديثاً / الأكثر مبيعاً"
-                  className="w-full px-3 py-2 rounded-xl border border-brand-border text-sm"
-                />
+                <label className="block text-xs font-bold mb-1">اسم اللون</label>
+                <div className="flex gap-2">
+                  <input
+                    value={colorNameAr}
+                    onChange={(e) => setColorNameAr(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl border border-brand-border text-sm"
+                  />
+                  <input
+                    type="color"
+                    value={colorHex}
+                    onChange={(e) => setColorHex(e.target.value)}
+                    className="w-10 h-10 rounded-lg border border-brand-border"
+                  />
+                </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold mb-1">وصف القطعة والتفاصيل</label>
+              <label className="block text-xs font-bold mb-1">وصف القطعة</label>
               <textarea
                 rows={2}
                 value={descriptionAr}
                 onChange={(e) => setDescriptionAr(e.target.value)}
-                placeholder="اكتبي تفاصيل الخامة، المقاسات التي تلبسها، إلخ..."
                 className="w-full px-3 py-2 rounded-xl border border-brand-border text-sm"
               />
             </div>
 
-            {/* Step 1: Upload Images */}
-            <div className="bg-brand-blush/30 p-4 rounded-2xl border border-brand-border space-y-3">
-              <label className="block text-xs font-extrabold text-brand-ink">
-                1. رفع صور المنتج (ارفعي كل صور الألوان مرة واحدة) *
-              </label>
-              <label className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-brand-rose bg-white cursor-pointer hover:bg-brand-blush/50 transition-colors">
+            <div>
+              <label className="block text-xs font-bold mb-1">صور المنتج *</label>
+              <label className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-brand-pink bg-brand-blush/40 cursor-pointer hover:bg-brand-blush">
                 <Upload className="w-6 h-6 text-brand-rose mb-1" />
                 <span className="text-xs font-bold text-brand-ink">
-                  {uploading ? "جاري رفع الصور..." : "اضغطي لاختيار الصور من جهازك (يمكنك اختيار عدة صور)"}
+                  {uploading ? "جاري رفع الصور..." : "اضغطي لاختيار الصور من جهازك"}
                 </span>
                 <input
                   type="file"
@@ -700,96 +657,26 @@ export default function AdminPage() {
                 />
               </label>
 
-              {allImages.length > 0 && (
-                <div className="flex gap-2 mt-2 flex-wrap">
-                  {allImages.map((url, idx) => (
-                    <div key={idx} className="relative group">
-                      <img
-                        src={url}
-                        alt=""
-                        className="w-14 h-18 rounded-xl object-cover border border-brand-border"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setAllImages(allImages.filter((_, i) => i !== idx))}
-                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-[10px] flex items-center justify-center font-bold"
-                      >
-                        ✕
-                      </button>
-                    </div>
+              {uploadedImages.length > 0 && (
+                <div className="flex gap-2 mt-3 flex-wrap">
+                  {uploadedImages.map((url, idx) => (
+                    <img
+                      key={idx}
+                      src={url}
+                      alt=""
+                      className="w-16 h-20 rounded-xl object-cover border border-brand-border"
+                    />
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Step 2: Define Colors */}
-            <div className="bg-brand-cream p-4 rounded-2xl border border-brand-border space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-1.5 text-xs font-extrabold text-brand-ink">
-                  <Palette className="w-4 h-4 text-brand-rose" />
-                  <span>2. تحديد ألوان المنتج (لكل لون اسمه وكود لونه وصورته)</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={handleAddColorRow}
-                  className="px-3 py-1 rounded-full bg-brand-ink text-white text-xs font-bold hover:bg-brand-rose transition-colors"
-                >
-                  + إضافة لون آخر
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                {productColors.map((col, index) => (
-                  <div key={index} className="flex flex-wrap sm:flex-nowrap gap-2 items-center bg-white p-3 rounded-xl border border-brand-border">
-                    <input
-                      type="text"
-                      placeholder="اسم اللون (مثال: نبيتي)"
-                      value={col.nameAr}
-                      onChange={(e) => handleColorChange(index, "nameAr", e.target.value)}
-                      className="flex-1 px-3 py-1.5 rounded-lg border border-brand-border text-xs"
-                    />
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="color"
-                        value={col.hex}
-                        onChange={(e) => handleColorChange(index, "hex", e.target.value)}
-                        className="w-8 h-8 rounded-lg border border-brand-border cursor-pointer p-0"
-                      />
-                    </div>
-                    <select
-                      value={col.image}
-                      onChange={(e) => handleColorChange(index, "image", e.target.value)}
-                      className="flex-1 px-2 py-1.5 rounded-lg border border-brand-border text-xs bg-white truncate"
-                    >
-                      <option value="">اختاري صورة هذا اللون...</option>
-                      {allImages.map((img, i) => (
-                        <option key={i} value={img}>
-                          صورة رقم {i + 1} ({img.slice(-15)})
-                        </option>
-                      ))}
-                    </select>
-
-                    {productColors.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveColorRow(index)}
-                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
-                        title="حذف اللون"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <button
               type="submit"
-              disabled={savingProduct || !allImages.length}
-              className="w-full py-3.5 rounded-full bg-brand-rose text-white font-bold text-sm hover:bg-brand-deep disabled:opacity-50 shadow-md transition-colors"
+              disabled={savingProduct || !uploadedImages.length}
+              className="w-full py-3.5 rounded-full bg-brand-rose text-white font-bold text-sm hover:bg-brand-deep disabled:opacity-50"
             >
-              {savingProduct ? "جاري نشر المنتج..." : "نشر المنتج بجميع ألوانه في المتجر"}
+              {savingProduct ? "جاري الحفظ..." : "نشر المنتج في المتجر"}
             </button>
           </form>
         </div>
